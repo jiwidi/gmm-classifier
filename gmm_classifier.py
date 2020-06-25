@@ -9,6 +9,14 @@ def log_gaussian(o, mu, r):
     return compute
 
 
+def logdet(X):
+    lamb = np.linalg.eig(X)[0]
+    if np.any(lamb <= 0.0):
+        return np.log(2.2204e-16)
+    else:
+        return np.sum(np.log(lamb), axis=0)
+
+
 class SingleGauss:
     def __init__(self):
         self.dim = None
@@ -26,30 +34,51 @@ class SingleGauss:
 
 class gaussian_classifier:
     def __init__(self):
-        self.n_classes = None
-        self.mu = None
-        self.r = None
+        self.n_classes = 0
+        self.pc = []
+        self.mu = []
+        self.sigma = []
 
-    def train(self, x, y):
+    def train(self, x, y, alpha=1.0):
         self.n_classes = len(set(y))
-        self.classifiers = [SingleGauss() for _ in range(self.n_classes)]
+        self.mu = []
         for i in range(self.n_classes):
             mask = np.where(y == i)[0]
             xtmp = x[mask]
             ytmp = y[mask]
-            self.classifiers[i].train(x_train)
+            self.pc.append(len(xtmp) / len(x))  # Probability of class C
+            muc = np.sum(xtmp, axis=0) / len(xtmp)
+            self.mu.append(muc)
+            # sigma = np.sum(np.matmul(xtmp - muc, xtmp - np.transpose(muc)), axis=0) Why not this?
+            sigma = ((xtmp - muc).T.dot(xtmp - muc)) / len(xtmp)
+            # Smoothing
+            sigma = alpha * sigma + (1 - alpha) * np.eye(x.shape[1])
+            self.sigma.append(sigma)
 
-    def loglike(self, x):
-        yhat = []
+    def compute_pxGc(self, X, ic):
+        sigma = self.sigma[ic]
+        mu = self.mu[ic]
+        qua = -0.5 * np.sum(np.multiply(np.matmul(X, np.linalg.pinv(sigma)), X), axis=1)
+        lin = X.dot(mu.T.dot(np.linalg.pinv(sigma))).T
+        cons = -0.5 * logdet(sigma)
+        cons = cons - 0.5 * (mu.T.dot(np.linalg.pinv(sigma)).dot(mu))
+        return qua + lin + cons
+
+    def predict(self, X):
+        gte = np.zeros([self.n_classes, len(X)])
         for i in range(self.n_classes):
-            ll = self.classifiers[i].loglike(x)
-            yhat.append(ll)
-        return np.array(yhat)
+            gte[i] = np.log(self.pc[i]) + self.compute_pxGc(X, i)
+        return np.argmax(gte, axis=0)
 
 
 (x_train, y_train), (x_test, y_test) = get_mnist("data/").load_data()
-# classifier = gaussian_classifier()
-# classifier.train(x_test, y_test)
-# r = classifier.loglike(x_test[0])
-# print(r)
+print(x_test.shape)
+classifier = gaussian_classifier()
+# x_test = np.array([[3, 4, 5], [5, 4, 3], [1, 1, 1]])
+# y_test = np.array([0, 1, 1])
+classifier.train(x_train, y_train)
+r = classifier.predict(x_test)
+# r = classifier.compute_pxGc(x_test, 1)
+print(r[:20])
+print(y_test[:20])
 

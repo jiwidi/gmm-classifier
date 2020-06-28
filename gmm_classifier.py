@@ -2,23 +2,19 @@ from mnist_dataset import get_mnist
 import pdb
 import numpy as np
 import math
+import warnings
 
-np.random.seed(23)
-
-
-def log_gaussian(o, mu, r):
-    compute = (-0.5 * np.log(r) - np.divide(np.square(o - mu), 2 * r) - 0.5 * np.log(2 * math.pi)).sum()
-    return compute
+warnings.filterwarnings("ignore")
+np.random.seed(17)
 
 
 def logdet(X):
-    np.savetxt("test.out", X)
-    return np.linalg.slogdet(X)[1]
+    # np.savetxt("test.out", X)
+    # return np.linalg.slogdet(X)[1]
     lamb = np.linalg.eig(X)[0]
     if np.any(lamb <= 0.0):
         return np.log(2.2204e-16)
     else:
-        print("det")
         return np.sum(np.log(lamb), axis=0)
 
 
@@ -30,7 +26,7 @@ class gmm_classifier:
         self.sigma = []
         self.pkGc = []
 
-    def compute_zk(self, X, ic, k):
+    def compute_zk(self, X, ic, k, printp=False):
         mu = self.mu[ic][:, k]
         sigma = self.sigma[ic][k]
         D = X.shape[1]
@@ -41,6 +37,13 @@ class gmm_classifier:
         lin = X.dot(mu.T.dot(np.linalg.pinv(sigma)).T)
         qua = -0.5 * np.sum(np.multiply(X.dot(np.linalg.pinv(sigma)), X), axis=1)
         zk = qua + lin + cons
+        if printp:
+            print("X", X)
+            print("mu", mu)
+            print("sigma", sigma)
+            print("pkGc", self.pkGc[ic][k])
+            print("cons", cons)
+            print("ooooooooooooooooo")
         return zk
 
     def train(self, x, y, xt, yt, K, alpha=1.0):
@@ -76,25 +79,25 @@ class gmm_classifier:
                 Nc = len(xtmp)
                 zk = []
                 for k in range(K):
-                    zk.append(self.compute_zk(xtmp, c, k))
+                    zk.append(self.compute_zk(xtmp, c, k, printp=False))
                 zk = np.array(zk).T
                 # Robust computation of znk and log-likehood
                 maxzk = zk.max(axis=1)
-                zk = np.exp(zk - maxzk[:, None])
+                zk = np.exp(zk - maxzk.reshape(-1, 1))
                 sumzk = np.sum(zk, 1)
-                zk = np.divide(zk, sumzk[:, None])
+                zk = np.divide(zk, sumzk.reshape(-1, 1))
                 L = L + Nc * np.log(pc[c]) + np.sum(maxzk + np.log(sumzk), 0)
                 # M step: parameter update
                 # Weight of each component
                 sumzk = np.sum(zk, 0)
                 self.pkGc[c] = sumzk / Nc
                 self.mu[c] = np.divide(xtmp.T.dot(zk), sumzk)
+
                 for k in range(K):
                     covar = (
-                        (xtmp - self.mu[c][:, k].T).T.dot(np.multiply(xtmp - self.mu[c][:, k].T, zk[:, k][:, None]))
+                        (xtmp - self.mu[c][:, k].T).T.dot(np.multiply(xtmp - self.mu[c][:, k].T, zk[:, k].reshape(-1, 1)))
                     ) / sumzk[k]
                     # Smoothing
-                    # ((a - a[:, k].T).T.dot(np.multiply(a - a[:, k].T, zk[:, k])))
                     self.sigma[c][k] = alpha * covar + (1 - alpha) * np.eye(x.shape[1])
             # Likelihood divided by the number of training samples
             L = L / len(x)
@@ -109,7 +112,7 @@ class gmm_classifier:
                 zk = np.array(zk).T
                 # Robust computation of znk
                 maxzk = zk.max(axis=1)
-                zk = np.exp(zk - maxzk[:, None])
+                zk = np.exp(zk - maxzk.reshape(-1, 1))
                 sumzk = np.sum(zk, 1)
                 tmp_gtr = np.log(pc[c]) + maxzk + np.log(sumzk)
                 gtr.append(tmp_gtr)
@@ -120,7 +123,7 @@ class gmm_classifier:
                 zk = np.array(zk).T
                 # Robust computation of znk
                 maxzk = zk.max(axis=1)
-                zk = np.exp(zk - maxzk[:, None])
+                zk = np.exp(zk - maxzk.reshape(-1, 1))
                 sumzk = np.sum(zk, 1)
                 tmp_gte = np.log(pc[c]) + maxzk + np.log(sumzk)
                 gte.append(tmp_gte)
@@ -129,10 +132,14 @@ class gmm_classifier:
             # Classification of training and test sets and error estimation
             ## Training
             yhat = np.argmax(gtr, axis=1)
+            print(yhat)
+            print(y)
+            print(np.mean(y == yhat))
+            sys.exit(0)
             trerr = np.mean(y != yhat) * 100
             ## Test
             yhat = np.argmax(gte, axis=1)
-            teerr = np.mean(y_test != yhat) * 100
+            teerr = np.mean(yt != yhat) * 100
             it += 1
             print("{:4} {:11} {:11} {:5} {:5}".format(it, oL, L, trerr, teerr))
 
@@ -143,36 +150,4 @@ class gmm_classifier:
         for i in range(self.n_classes):
             gte[i] = np.log(self.pc[i]) + self.compute_pxGc(X, i)
         return np.argmax(gte, axis=0)
-
-
-# (x_train, y_train), (x_test, y_test) = get_mnist("data/").load_data()
-classifier = gmm_classifier()
-x_test = np.array(
-    [
-        [3, 4, 5],
-        [5, 4, 3],
-        [1, 1, 1],
-        [3, 33, 5],
-        [5, 235, 3],
-        [1, 6, 1],
-        [231, 4, 5],
-        [5, 123, 3],
-        [7, 1, 1],
-        [3, 4, 12],
-        [5, 22, 3],
-        [1, 8, 1],
-        [3, 4, 5],
-        [5, 67, 3],
-        [1, 1, 1],
-    ]
-)
-
-y_test = np.array([0, 1, 1, 0, 2, 0, 1, 1, 0, 2, 2, 1, 1, 0, 1])
-classifier.train(x_test, y_test, x_test, y_test, 2, 1.0)
-r = classifier.predict(x_test)
-acc = np.mean(y_test == r) * 100
-# r = classifier.compute_pxGc(x_test, 1)
-print(r[:20])
-print(y_test[:20])
-print(100 - acc)
 

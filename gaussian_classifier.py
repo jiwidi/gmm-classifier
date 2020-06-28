@@ -3,12 +3,6 @@ import pdb
 import numpy as np
 import math
 
-
-def log_gaussian(o, mu, r):
-    compute = (-0.5 * np.log(r) - np.divide(np.square(o - mu), 2 * r) - 0.5 * np.log(2 * math.pi)).sum()
-    return compute
-
-
 def logdet(X):
     return np.linalg.slogdet(X)[1]
     lamb = np.linalg.eig(X)[0]
@@ -58,18 +52,4 @@ class gaussian_classifier:
         for c in range(self.n_classes):
             gte[c] = np.log(self.pc[c]) + self.compute_pxGc(X, c)
         return np.argmax(gte, axis=0)
-
-
-# (x_train, y_train), (x_test, y_test) = get_mnist("data/").load_data()
-# print(x_test.shape)
-# classifier = gaussian_classifier()
-# # x_test = np.array([[3, 4, 5], [5, 4, 3], [1, 1, 1]])
-# # y_test = np.array([0, 1, 1])
-# classifier.train(x_test, y_test)
-# r = classifier.predict(x_test)
-# acc = np.mean(y_test == r) * 100
-# # r = classifier.compute_pxGc(x_test, 1)
-# print(r[:20])
-# print(y_test[:20])
-# print(100 - acc)
 

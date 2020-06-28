@@ -22,9 +22,10 @@ GMM
 from gmm_classifier import gmm_classifier
 
 (x_train, y_train), (x_test, y_test) = get_mnist("data/").load_data()
+x_train, y_train, x_validate, y_validate = splitvalidate(x_train,y_train)
 gauss = gmm_classifier()
 #Here we pass test data for early stopping
-gauss.train(x_train,y_train,x_test,y_test,k=5,alpha=1.0) #K number of mixtures and alpha value for smoothing
+gauss.train(x_train,y_train,x_validate,y_validate,k=5,alpha=1.0) #K number of mixtures and alpha value for smoothing
 yhat = gauss.predict(x_test)
 yhat!=y_test ## Error rate
 ```

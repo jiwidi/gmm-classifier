@@ -69,6 +69,8 @@ class gmm_classifier:
         L = float("-inf")
         it = 0
         oL = L
+        print(" It          oL           L trerr teerr\n")
+        print("--- ----------- ----------- ----- -----\n")
         while not ((L - oL) / abs(oL) < epsilon):
             oL = L
             L = 0
@@ -132,22 +134,10 @@ class gmm_classifier:
             # Classification of training and test sets and error estimation
             ## Training
             yhat = np.argmax(gtr, axis=1)
-            print(yhat)
-            print(y)
-            print(np.mean(y == yhat))
-            sys.exit(0)
             trerr = np.mean(y != yhat) * 100
             ## Test
             yhat = np.argmax(gte, axis=1)
             teerr = np.mean(yt != yhat) * 100
             it += 1
-            print("{:4} {:11} {:11} {:5} {:5}".format(it, oL, L, trerr, teerr))
-
-        # print(len(self.sigma[0][0]))
-
-    def predict(self, X):
-        gte = np.zeros([self.n_classes, len(X)])
-        for i in range(self.n_classes):
-            gte[i] = np.log(self.pc[i]) + self.compute_pxGc(X, i)
-        return np.argmax(gte, axis=0)
+            print("{} {:11.5f}  {:11.5f}  {:5.2f} {:5.2f}".format(it, oL, L, trerr, teerr))
 

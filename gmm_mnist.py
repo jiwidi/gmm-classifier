@@ -11,7 +11,7 @@ def main():
     pca.fit(x_train)
     x_train_tmp = pca.transform(x_train)
     x_test_tmp = pca.transform(x_test)
-    classifier.train(x_train_tmp, y_test, x_test_tmp, y_test, 5, 0.9)
+    classifier.train(x_train_tmp, y_train, x_test_tmp, y_test, 5, 0.9)
 
     # x_test = np.array(
     #     [

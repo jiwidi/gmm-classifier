@@ -1,20 +1,49 @@
-# gmm-classifier
+# GMM-classifier
 
-A python implementation of both a Gaussian classifier and Gaussian mixture models
+A python implementation of both a Gaussian classifier and Gaussian mixture models.
 
+![](scripts/results/gaussian.jpeg)
 
-You can check the example on they work with the mnist dataset on gc_mnist.py and gmm_mnist.py
+## Usage
+
+Gaussian classifier
+```python
+from gaussian_classifier import gaussian_classifier
+
+(x_train, y_train), (x_test, y_test) = get_mnist("data/").load_data()
+gauss = gaussian_classifier()
+gauss.train(x_train,y_train,alpha=1.0) #Alpha value for smoothing
+yhat = gauss.predict(x_test)
+yhat!=y_test ## Error rate
+```
+
+GMM
+```python
+from gmm_classifier import gmm_classifier
+
+(x_train, y_train), (x_test, y_test) = get_mnist("data/").load_data()
+gauss = gmm_classifier()
+#Here we pass test data for early stopping
+gauss.train(x_train,y_train,x_test,y_test,k=5,alpha=1.0) #K number of mixtures and alpha value for smoothing
+yhat = gauss.predict(x_test)
+yhat!=y_test ## Error rate
+```
+## Examples
+You can check the example on they work with the mnist dataset on gc_mnist.py and gmm_mnist.py scripts under scripts/.
 
 Results from gc_mnist.py
 
-|    Unsmoothed    |     Smoothed     |
-| :--------------: | :--------------: |
-| ![](pca_4-1.png) | ![](pca_4-2.png) |
+|             Unsmoothed              |              Smoothed               |
+| :---------------------------------: | :---------------------------------: |
+| ![](scripts/results/gc_pca_4-1.png) | ![](scripts/results/gc_pca_4-2.png) |
 
 
 Results from gmm_mnist.py with mnist data reduced to 30dimensions and 5 mixtures
 
-```
+|          Analysis of alpha           |    Analysis of number of mixtures    |
+| :----------------------------------: | :----------------------------------: |
+| ![](scripts/results/gmm_pca_5-2.png) | ![](scripts/results/gmm_pca_5-3.png) |
+<!-- ```
  It          oL           L trerr teerr
 
 --- ----------- ----------- ----- -----
@@ -40,6 +69,5 @@ Results from gmm_mnist.py with mnist data reduced to 30dimensions and 5 mixtures
 19 -188.34727-0.00000j  -188.32775+0.00000j   2.44  2.79
 20 -188.32775+0.00000j  -188.30837+0.00000j   2.42  2.80
 21 -188.30837+0.00000j  -188.29017+0.00000j   2.45  2.78
-```
+``` -->
 
-Around 2.8% error rate of classification

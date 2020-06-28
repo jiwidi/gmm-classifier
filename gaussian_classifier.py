@@ -3,8 +3,8 @@ import pdb
 import numpy as np
 import math
 
+
 def logdet(X):
-    return np.linalg.slogdet(X)[1]
     lamb = np.linalg.eig(X)[0]
     if np.any(lamb <= 0.0):
         return np.log(2.2204e-16)

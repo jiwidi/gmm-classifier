@@ -9,8 +9,6 @@ np.random.seed(17)
 
 
 def logdet(X):
-    # np.savetxt("test.out", X)
-    # return np.linalg.slogdet(X)[1]
     lamb = np.linalg.eig(X)[0]
     if np.any(lamb <= 0.0):
         return np.log(2.2204e-16)
@@ -47,11 +45,14 @@ class gmm_classifier:
         return zk
 
     def train(self, x, y, xt, yt, K, alpha=1.0):
+
         self.n_classes = len(set(y))
         self.sigma = [[] for _ in range(self.n_classes)]
+        self.K = K
         # Initialization of parameters for the mixture of gaussians
         # Estimation of class priors as histogram counts
         pc = np.bincount(y) / x.shape[0]
+        self.pc = pc
         for c in range(self.n_classes):
             # Initialization of component priors p(k|c) as uniform distro
             self.pkGc.append([1 / K for _ in range(K)])
@@ -141,3 +142,19 @@ class gmm_classifier:
             it += 1
             print("{} {:11.5f}  {:11.5f}  {:5.2f} {:5.2f}".format(it, oL, L, trerr, teerr))
 
+    def predict(self, x):
+        gtr = []
+        for c in range(self.n_classes):
+            zk = []
+            for k in range(self.K):
+                zk.append(self.compute_zk(x, c, k))
+            zk = np.array(zk).T
+            # Robust computation of znk
+            maxzk = zk.max(axis=1)
+            zk = np.exp(zk - maxzk.reshape(-1, 1))
+            sumzk = np.sum(zk, 1)
+            tmp_gtr = np.log(self.pc[c]) + maxzk + np.log(sumzk)
+            gtr.append(tmp_gtr)
+        gtr = np.array(gtr).T
+        yhat = np.argmax(gtr, axis=1)
+        return yhat

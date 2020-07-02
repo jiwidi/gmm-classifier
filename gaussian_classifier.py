@@ -42,9 +42,7 @@ class gaussian_classifier:
         lin = X.dot(mu.T.dot(np.linalg.pinv(sigma))).T
         cons = -0.5 * logdet(sigma)
         cons = cons - 0.5 * (mu.T.dot(np.linalg.pinv(sigma)).dot(mu))
-        # print(qua[0], lin[0], cons)
         pxGc = qua + lin + cons
-        # print(pxGc[1])
         return pxGc
 
     def predict(self, X):

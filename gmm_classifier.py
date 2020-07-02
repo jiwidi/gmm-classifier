@@ -24,7 +24,7 @@ class gmm_classifier:
         self.sigma = []
         self.pkGc = []
 
-    def compute_zk(self, X, ic, k, printp=False):
+    def compute_zk(self, X, ic, k):
         mu = self.mu[ic][:, k]
         sigma = self.sigma[ic][k]
         D = X.shape[1]
@@ -35,13 +35,6 @@ class gmm_classifier:
         lin = X.dot(mu.T.dot(np.linalg.pinv(sigma)).T)
         qua = -0.5 * np.sum(np.multiply(X.dot(np.linalg.pinv(sigma)), X), axis=1)
         zk = qua + lin + cons
-        if printp:
-            print("X", X)
-            print("mu", mu)
-            print("sigma", sigma)
-            print("pkGc", self.pkGc[ic][k])
-            print("cons", cons)
-            print("ooooooooooooooooo")
         return zk
 
     def train(self, x, y, xt, yt, K, alpha=1.0):
@@ -82,7 +75,7 @@ class gmm_classifier:
                 Nc = len(xtmp)
                 zk = []
                 for k in range(K):
-                    zk.append(self.compute_zk(xtmp, c, k, printp=False))
+                    zk.append(self.compute_zk(xtmp, c, k))
                 zk = np.array(zk).T
                 # Robust computation of znk and log-likehood
                 maxzk = zk.max(axis=1)
